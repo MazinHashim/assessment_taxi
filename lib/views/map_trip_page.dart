@@ -15,9 +15,6 @@ class MapTripPage extends StatefulWidget {
 }
 
 class _MapTripPageState extends State<MapTripPage> {
-  final Completer<GoogleMapController> _controller =
-      Completer<GoogleMapController>();
-
   final tripController = Get.put(TripController());
 
   @override
@@ -62,9 +59,24 @@ class _MapTripPageState extends State<MapTripPage> {
                       zoom: 16,
                     ),
                     onMapCreated: (GoogleMapController controller) {
-                      _controller.complete(controller);
+                      tripController.controller.complete(controller);
                     },
                   ),
+            if (tripController.isLoading.value)
+              Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: Colors.black.withOpacity(0.2),
+                child: const Center(
+                  child: Text(
+                    "Loading...",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
             RoutingWidget(),
             if (tripController.isTripDetermined)
               Positioned(
@@ -109,10 +121,12 @@ class _MapTripPageState extends State<MapTripPage> {
                     ));
                   }).then((value) {
                     final latLng = tripController.currentPosition.value;
-
-                    _animateCameraPosition(CameraPosition(
-                        zoom: 18,
-                        target: LatLng(latLng.latitude, latLng.longitude)));
+                    tripController.isLoading.value = false;
+                    controller.animateCameraPosition(
+                        tripController.controller,
+                        CameraPosition(
+                            zoom: 18,
+                            target: LatLng(latLng.latitude, latLng.longitude)));
                   });
                 },
                 style: ButtonStyle(
@@ -134,10 +148,5 @@ class _MapTripPageState extends State<MapTripPage> {
         );
       }),
     );
-  }
-
-  Future<void> _animateCameraPosition(CameraPosition position) async {
-    final GoogleMapController controller = await _controller.future;
-    await controller.animateCamera(CameraUpdate.newCameraPosition(position));
   }
 }

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxi_app_assessment/views/map_trip_page.dart';
 import 'package:taxi_app_assessment/views/login_page.dart';
+import 'package:flutter_config/flutter_config.dart';
 
 void main() async {
-  await dotenv.load(fileName: ".env"); //path to your .env file
+  WidgetsFlutterBinding.ensureInitialized(); // Required by FlutterConfig
+  await FlutterConfig.loadEnvVariables();
+
   runApp(const MyApp());
 }
 

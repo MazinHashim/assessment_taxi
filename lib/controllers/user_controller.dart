@@ -1,13 +1,13 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_config/flutter_config.dart';
 import 'package:get/state_manager.dart';
 import 'package:taxi_app_assessment/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserController extends GetxController {
-  String? userId = dotenv.env['USER_ID'];
-  String? email = dotenv.env['USER_EMAIL'];
-  String? name = dotenv.env['USER_NAME'];
-  String? password = dotenv.env['USER_PASSWORD'];
+  String? userId = FlutterConfig.get('USER_ID');
+  String? email = FlutterConfig.get('USER_EMAIL');
+  String? name = FlutterConfig.get('USER_NAME');
+  String? password = FlutterConfig.get('USER_PASSWORD');
 
   Rx<User> user = User().obs;
   Future<SharedPreferences>? futurelocalStorage;

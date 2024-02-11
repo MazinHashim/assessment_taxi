@@ -1,5 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_config/flutter_config.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -8,13 +10,19 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:taxi_app_assessment/models/trip.dart';
 
 class TripController extends GetxController {
+  final Completer<GoogleMapController> _controller =
+      Completer<GoogleMapController>();
+
   Rx<LatLng> currentPosition = const LatLng(0, 0).obs;
   Rx<LatLng> fromSource = const LatLng(0, 0).obs;
   Rx<LatLng> toDest = const LatLng(0, 0).obs;
   final RxSet<Marker> _markerSet = const <Marker>{}.obs;
   final RxMap<PolylineId, Polyline> _polylines = <PolylineId, Polyline>{}.obs;
   Rx<Trip> trip = Trip().obs;
-  String? googleAPiKey = dotenv.env["MY_API_KEY"];
+  String? googleAPiKey = FlutterConfig.get('MY_API_KEY');
+  bool? paidDirectionApi = bool.tryParse(
+      FlutterConfig.get("PAID_DIRECTION_API")!,
+      caseSensitive: false);
   PolylinePoints polylinePoints = PolylinePoints();
   List<LatLng> polylineCoordinates = [];
 
@@ -23,7 +31,9 @@ class TripController extends GetxController {
   RxBool locationServiceEnabled = false.obs;
   RxBool chooseFromMap = false.obs;
   RxBool toggle = true.obs;
+  RxBool isLoading = false.obs;
   bool get isTripDetermined => markerSet.length > 1 && !chooseFromMap.value;
+  Completer<GoogleMapController> get controller => _controller;
   bool get isSourceAndDestFound =>
       fromSource.value.latitude != 0 && toDest.value.latitude != 0;
 
@@ -40,28 +50,45 @@ class TripController extends GetxController {
   _addPolyLine() {
     PolylineId id = const PolylineId("poly");
     Polyline polyline = Polyline(
-        polylineId: id, color: Colors.deepPurple, points: polylineCoordinates);
+      polylineId: id,
+      color: Colors.deepPurple,
+      points: polylineCoordinates,
+      width: 2,
+    );
     polylines[id] = polyline;
     update();
   }
 
   Future<void> getPolyline() async {
-    // PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-    //   googleAPiKey!,
-    //   PointLatLng(fromSource.value.latitude, fromSource.value.longitude),
-    //   PointLatLng(toDest.value.latitude, toDest.value.longitude),
-    //   travelMode: TravelMode.driving,
-    // );
-    // if (result.points.isNotEmpty) {
-    // for (PointLatLng point in result.points) {
-    //   polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-    // }
-    polylineCoordinates
-        .add(LatLng(fromSource.value.latitude, fromSource.value.longitude));
-    polylineCoordinates
-        .add(LatLng(toDest.value.latitude, toDest.value.longitude));
-    // }
+    if (paidDirectionApi == null || !paidDirectionApi!) {
+      polylineCoordinates
+          .add(LatLng(fromSource.value.latitude, fromSource.value.longitude));
+      polylineCoordinates
+          .add(LatLng(toDest.value.latitude, toDest.value.longitude));
+    } else {
+      PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+        googleAPiKey!,
+        PointLatLng(fromSource.value.latitude, fromSource.value.longitude),
+        PointLatLng(toDest.value.latitude, toDest.value.longitude),
+        travelMode: TravelMode.driving,
+      );
+      if (result.points.isNotEmpty) {
+        for (PointLatLng point in result.points) {
+          polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+        }
+      }
+    }
     _addPolyLine();
+  }
+
+  Future<void> animateCameraPosition(Completer<GoogleMapController> ccontroller,
+      CameraPosition cameraPosition) async {
+    isLoading.value = true;
+    final GoogleMapController controller = await ccontroller.future;
+    await controller
+        .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
+    isLoading.value = false;
+    update();
   }
 
   Future<void> calculateTripDetails() async {
@@ -96,13 +123,31 @@ class TripController extends GetxController {
       price: (distance / 1000).round() * 2,
       duration: duration.inMinutes,
     );
+    double zoom = calculateZoom();
+    animateCameraPosition(
+        _controller, CameraPosition(zoom: zoom, target: toDest.value));
     update();
+  }
+
+  double calculateZoom() {
+    double zoom = 15;
+    if (trip.value.distance! < 5) {
+      zoom = 17;
+    } else if (trip.value.distance! >= 5 && trip.value.distance! < 10) {
+      zoom = 16;
+    } else if (trip.value.distance! >= 10 && trip.value.distance! < 20) {
+      zoom = 15;
+    } else if (trip.value.distance! >= 20 && trip.value.distance! < 30) {
+      zoom = 14;
+    }
+    return zoom;
   }
 
   /// fetch current location of the device
   Future<void> getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
+    isLoading.value = true;
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
       const Duration(seconds: 6),
@@ -134,6 +179,7 @@ class TripController extends GetxController {
       ImageConfiguration.empty,
       imgsrc,
     );
+    isLoading.value = false;
     _markerSet
         .removeWhere((marker) => marker.markerId.value == "current-location");
     markerSet.add(Marker(
@@ -149,6 +195,7 @@ class TripController extends GetxController {
     fromSource.value = const LatLng(0, 0);
     toDest.value = const LatLng(0, 0);
     _polylines.clear();
+    polylineCoordinates.clear();
     _markerSet
         .removeWhere((marker) => marker.markerId.value.startsWith("mark"));
     update();
