@@ -32,6 +32,8 @@ USER_PASSWORD = "{{YOUR_PASSWORD}}"
 PAID_DIRECTION_API = "false"
 ```
 
+![alt text](https://github.com/MazinHashim/assessment_taxi/blob/master/assets/imgs/assets/imgs/env_location.PNG)
+
 - Copy all these data and paste it in `.env` file
 - Replace double curly bracket with any prefered data and Google Map API_KEY
 
