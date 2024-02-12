@@ -26,11 +26,18 @@ USER_EMAIL = "{{YOUR_EMAIL}}"
 USER_PASSWORD = "{{YOUR_PASSWORD}}"
 ```
 
+### PAID_DIRECTION_API is equals true if your API_KEY billing active
+
 ```sh
 PAID_DIRECTION_API = "false"
 ```
 
-- replace double curly bracket with any prefered data and Google Map API_KEY
+### Login Page
+
+![alt text](https://github.com/MazinHashim/assessment_taxi/assets/imgs/login.jpg)
+
+- Copy all these data and paste it in `.env` file
+- Replace double curly bracket with any prefered data and Google Map API_KEY
 
 A few resources to get you started if this is your first Flutter project:
 
