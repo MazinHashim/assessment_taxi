@@ -34,7 +34,7 @@ PAID_DIRECTION_API = "false"
 
 ### Login Page
 
-![alt text](https://github.com/MazinHashim/assessment_taxi/assets/imgs/login.jpg)
+![alt text](https://github.com/MazinHashim/assessment_taxi/blob/master/assets/imgs/login.jpg)
 
 - Copy all these data and paste it in `.env` file
 - Replace double curly bracket with any prefered data and Google Map API_KEY
