@@ -147,7 +147,6 @@ class TripController extends GetxController {
   Future<void> getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
-    isLoading.value = true;
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
       const Duration(seconds: 6),
@@ -179,7 +178,6 @@ class TripController extends GetxController {
       ImageConfiguration.empty,
       imgsrc,
     );
-    isLoading.value = false;
     _markerSet
         .removeWhere((marker) => marker.markerId.value == "current-location");
     markerSet.add(Marker(
@@ -211,12 +209,18 @@ class TripController extends GetxController {
     update();
   }
 
-  void addToMarkersSet(LatLng latLng) {
+  void addToMarkersSet(LatLng latLng) async {
+    const imgsrc = 'assets/imgs/car_icon.png';
+    final markerbitmap = await BitmapDescriptor.fromAssetImage(
+      ImageConfiguration.empty,
+      imgsrc,
+    );
     _markerSet.removeWhere(
         (marker) => marker.markerId.value == "mark-${toggle.value}");
     _markerSet.add(Marker(
       markerId: MarkerId("mark-${toggle.value}"),
       position: latLng,
+      icon: markerbitmap,
     ));
     toggle.value = !toggle.value;
     update();

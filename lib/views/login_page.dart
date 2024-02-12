@@ -94,8 +94,8 @@ class _LoginState extends State<Login> {
                   if (password.contains(" ")) {
                     return "Password must not contain spaces";
                   }
-                  if (password.length > 20 && password.length < 4) {
-                    return "Please enter password less than 21 and greater than 3";
+                  if (password.length > 20 || password.length < 4) {
+                    return "Please enter password LTN 21 and GTN than 3";
                   }
                   return null;
                 },
